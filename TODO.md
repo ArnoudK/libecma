@@ -1,4 +1,12 @@
+# what to do
 
-[ ] comments
-[ ] objects
-[ ] vm / byte code
+## big
+- [ ] comments parsing / lexing
+- [ ] objects
+- [ ] accessors
+- [ ] vm / byte code
+
+## generic
+- [] std js lib
+   -    [] console  
+   -    [] math
