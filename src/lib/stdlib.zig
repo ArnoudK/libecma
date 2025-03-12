@@ -1,13 +1,14 @@
 const std = @import("std");
 const Interpreter = @import("interpreter.zig").Interpreter;
 const Value = @import("interpreter.zig").Value;
-
+const initJSON = @import("stdlib_json.zig").initJSON;
 const stdout = std.io.getStdOut().writer();
 
 /// Initialize the standard library in the interpreter
 pub fn initStdLib(interp: *Interpreter) !void {
     try initConsole(interp);
     try initMath(interp);
+    try initJSON(interp);
 }
 
 pub var rnd: std.Random = undefined;

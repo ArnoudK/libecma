@@ -15,7 +15,7 @@ pub const Value = union(enum) {
     Function: struct {
         params: [][]const u8,
         body: ast.BlockStatement,
-        closure: *gc.JSEnv, // Updated to use JSEnv
+        closure: *gc.JSEnv,
     },
     NativeFunction: struct {
         name: []const u8,
@@ -37,13 +37,11 @@ pub const Value = union(enum) {
     }
 };
 
-// Remove the Environment struct as we're using JSEnv instead
-
 /// The interpreter state
 pub const Interpreter = struct {
     gc: gc.GarbageCollector,
-    global_env: *gc.JSEnv, // Changed to JSEnv
-    current_env: *gc.JSEnv, // Changed to JSEnv
+    global_env: *gc.JSEnv,
+    current_env: *gc.JSEnv,
     allocator: std.mem.Allocator,
 
     const Self = @This();
@@ -68,7 +66,6 @@ pub const Interpreter = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        // No need to manually free environments as they're handled by the GC
         self.gc.deinit();
     }
 
@@ -92,7 +89,7 @@ pub const Interpreter = struct {
         };
     }
 
-    fn evaluateExpression(self: *Self, expr: ast.Expression) !Value {
+    fn evaluateExpression(self: *Self, expr: ast.Expression) anyerror!Value {
         return switch (expr) {
             .Number => |n| Value{ .Number = n },
             .String => |s| try self.createString(s), // Use new GC string creation
@@ -105,8 +102,10 @@ pub const Interpreter = struct {
             .Call => |call| try self.evaluateCallExpression(call),
             .MemberAccess => |access| self.evaluateMemberAccessExpression(access),
             .Array => |elements| try self.evaluateArrayLiteral(elements),
-            // Other expression types would be implemented here
-            else => Value{ .Undefined = {} },
+            .Object => |properties| try self.evaluateObjectLiteral(properties),
+            .IndexAccess => |access| try self.evaluateIndexAccessExpression(access),
+            .Ternary => |ternary| try self.evaluateTernaryExpression(ternary),
+            //else => Value{ .Undefined = {} },
         };
     }
 
@@ -306,6 +305,50 @@ pub const Interpreter = struct {
         }
 
         return array_value;
+    }
+
+    fn evaluateObjectLiteral(self: *Self, properties: []ast.ObjectProperty) anyerror!Value {
+        // Create a new empty object
+        const object_value = try self.createObject();
+
+        // Evaluate each property and set it in the object
+        for (properties) |property| {
+            const value = try self.evaluateExpression(property.value.*);
+            try self.setProperty(object_value, property.key, value);
+        }
+
+        return object_value;
+    }
+
+    fn evaluateIndexAccessExpression(self: *Self, access: ast.IndexAccessExpression) !Value {
+        const object = try self.evaluateExpression(access.object.*);
+        const index = try self.evaluateExpression(access.index.*);
+
+        // Handle different index types
+        if (index == .String) {
+            const property = index.String;
+            return self.getProperty(object, property);
+        } else if (index == .Number and object == .Array) {
+            const idx: usize = @intFromFloat(index.Number);
+            return self.getArrayElement(object, idx) catch |err| {
+                switch (err) {
+                    // error.IndexOutOfBounds => return Value{ .Undefined = {} },
+                    else => return err,
+                }
+            };
+        }
+
+        return Value{ .Undefined = {} };
+    }
+
+    fn evaluateTernaryExpression(self: *Self, ternary: ast.TernaryExpression) !Value {
+        const condition = try self.evaluateExpression(ternary.condition.*);
+
+        if (condition.truthy()) {
+            return self.evaluateExpression(ternary.then_branch.*);
+        } else {
+            return self.evaluateExpression(ternary.else_branch.*);
+        }
     }
 
     pub fn createObject(self: *Self) !Value {

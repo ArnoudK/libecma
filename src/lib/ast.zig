@@ -145,6 +145,15 @@ pub const Program = struct {
             .Number, .Boolean, .Null, .Identifier => {
                 // These types don't own memory that needs to be freed
                 // Note: We assume Identifier strings are owned elsewhere
+                // it should be the lexer / file_contents
+            },
+            .Object => |object| {
+                for (object) |*property| {
+                    // Free key if it's dynamically allocated (optional, depends on your implementation)
+                    self.freeExpression(property.value);
+                    self.allocator.destroy(property.value);
+                }
+                self.allocator.free(object);
             },
             .Array => |array| {
                 for (array) |*val| {
@@ -225,6 +234,7 @@ pub const Expression = union(enum) {
     Null: void,
     Identifier: []const u8,
     Array: []Expression,
+    Object: []ObjectProperty,
 };
 
 pub const AssignmentExpression = struct {
@@ -262,4 +272,9 @@ pub const TernaryExpression = struct {
     condition: *Expression,
     then_branch: *Expression,
     else_branch: *Expression,
+};
+
+pub const ObjectProperty = struct {
+    key: []const u8,
+    value: *Expression,
 };

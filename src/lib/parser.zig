@@ -336,6 +336,7 @@ pub const Parser = struct {
             .NumericLiteral => self.parseNumberLiteral(),
             .StringLiteral, .TemplateLiteralString => self.parseStringLiteral(),
             .BracketOpen => self.parseArrayLiteral(),
+            .CurlyOpen => self.parseObjectLiteral(),
             .BoolLiteral => self.parseBooleanLiteral(),
             .NullLiteral => self.parseNullLiteral(),
             .Identifier => self.parseIdentifier(),
@@ -343,6 +344,56 @@ pub const Parser = struct {
             .ExclamationMark, .Tilde, .Plus, .Minus, .Typeof, .Void, .Delete => self.parseUnary(),
             else => ParserError.UnexpectedToken,
         };
+    }
+
+    fn parseObjectLiteral(self: *Parser) ParserError!ast.Expression {
+        _ = self.advance(); // Consume '{'
+
+        var properties = std.ArrayList(ast.ObjectProperty).init(self.allocator);
+        defer properties.deinit();
+
+        if (!self.check(.CurlyClose)) {
+            while (true) {
+                // Parse property key
+                var key: []const u8 = undefined;
+
+                if (self.check(.Identifier)) {
+                    const id_token = self.advance();
+                    key = id_token.value.?;
+                } else if (self.check(.StringLiteral)) {
+                    const str_token = self.advance();
+                    const str_value = try str_token.parseStringValue(self.allocator);
+                    key = str_value;
+                } else {
+                    return ParserError.UnexpectedToken;
+                }
+
+                // Parse property value
+                _ = try self.consume(.Colon);
+                const value_expr = try self.parseExpression();
+
+                const value_ptr = try self.allocator.create(ast.Expression);
+                value_ptr.* = value_expr;
+
+                try properties.append(.{
+                    .key = key,
+                    .value = value_ptr,
+                });
+
+                if (!self.match(.Comma)) {
+                    break;
+                }
+
+                // Allow trailing comma
+                if (self.check(.CurlyClose)) {
+                    break;
+                }
+            }
+        }
+
+        _ = try self.consume(.CurlyClose);
+        const slice = try properties.toOwnedSlice();
+        return ast.Expression{ .Object = slice };
     }
 
     fn parseArrayLiteral(self: *Parser) ParserError!ast.Expression {
