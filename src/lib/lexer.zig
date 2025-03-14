@@ -78,7 +78,7 @@ pub const Lexer = struct {
     pub fn continueLexing(self: *@This()) LexerError!bool {
         self.skipWhitespace();
         if (self.index >= self.file_contents.len) {
-            const eofToken = Token{ .type = .Eof, .start = self.index, .end = self.index };
+            const eofToken = Token{ .kind = .Eof, .start = self.index, .end = self.index };
             try self.tokens.append(eofToken);
             return false;
         }
@@ -102,23 +102,23 @@ pub const Lexer = struct {
             '+' => {
                 if (self.peek() == '+') {
                     _ = self.nextChar();
-                    token = Token{ .type = .PlusPlus, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .PlusPlus, .start = self.index - 2, .end = self.index };
                 } else if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .PlusEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .PlusEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Plus, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Plus, .start = self.index - 1, .end = self.index };
                 }
             },
             '-' => {
                 if (self.peek() == '-') {
                     _ = self.nextChar();
-                    token = Token{ .type = .MinusMinus, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .MinusMinus, .start = self.index - 2, .end = self.index };
                 } else if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .MinusEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .MinusEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Minus, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Minus, .start = self.index - 1, .end = self.index };
                 }
             },
             '*' => {
@@ -126,21 +126,21 @@ pub const Lexer = struct {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .DoubleAsteriskEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .DoubleAsteriskEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .DoubleAsterisk, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .DoubleAsterisk, .start = self.index - 2, .end = self.index };
                     }
                 } else if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .AsteriskEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .AsteriskEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Asterisk, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Asterisk, .start = self.index - 1, .end = self.index };
                 }
             },
             '/' => {
                 if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .SlashEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .SlashEquals, .start = self.index - 2, .end = self.index };
                 } else if (self.peek() == '/') {
                     // @TODO handle comments properly?
                     // like /*@__PURE__*/ or /** @type {number} */
@@ -163,15 +163,15 @@ pub const Lexer = struct {
                     }
                     return true;
                 } else {
-                    token = Token{ .type = .Slash, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Slash, .start = self.index - 1, .end = self.index };
                 }
             },
             '%' => {
                 if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .PercentEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .PercentEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Percent, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Percent, .start = self.index - 1, .end = self.index };
                 }
             },
             '=' => {
@@ -179,12 +179,12 @@ pub const Lexer = struct {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .EqualsEqualsEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .EqualsEqualsEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .EqualsEquals, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .EqualsEquals, .start = self.index - 2, .end = self.index };
                     }
                 } else {
-                    token = Token{ .type = .Equals, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Equals, .start = self.index - 1, .end = self.index };
                 }
             },
             '!' => {
@@ -192,52 +192,52 @@ pub const Lexer = struct {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .ExclamationMarkEqualsEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .ExclamationMarkEqualsEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .ExclamationMarkEquals, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .ExclamationMarkEquals, .start = self.index - 2, .end = self.index };
                     }
                 } else {
-                    token = Token{ .type = .ExclamationMark, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .ExclamationMark, .start = self.index - 1, .end = self.index };
                 }
             },
             '<' => {
                 if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .LessThanEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .LessThanEquals, .start = self.index - 2, .end = self.index };
                 } else if (self.peek() == '<') {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .ShiftLeftEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .ShiftLeftEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .ShiftLeft, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .ShiftLeft, .start = self.index - 2, .end = self.index };
                     }
                 } else {
-                    token = Token{ .type = .LessThan, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .LessThan, .start = self.index - 1, .end = self.index };
                 }
             },
             '>' => {
                 if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .GreaterThanEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .GreaterThanEquals, .start = self.index - 2, .end = self.index };
                 } else if (self.peek() == '>') {
                     _ = self.nextChar();
                     if (self.peek() == '>') {
                         _ = self.nextChar();
                         if (self.peek() == '=') {
                             _ = self.nextChar();
-                            token = Token{ .type = .UnsignedShiftRightEquals, .start = self.index - 4, .end = self.index };
+                            token = Token{ .kind = .UnsignedShiftRightEquals, .start = self.index - 4, .end = self.index };
                         } else {
-                            token = Token{ .type = .UnsignedShiftRight, .start = self.index - 3, .end = self.index };
+                            token = Token{ .kind = .UnsignedShiftRight, .start = self.index - 3, .end = self.index };
                         }
                     } else if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .ShiftRightEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .ShiftRightEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .ShiftRight, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .ShiftRight, .start = self.index - 2, .end = self.index };
                     }
                 } else {
-                    token = Token{ .type = .GreaterThan, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .GreaterThan, .start = self.index - 1, .end = self.index };
                 }
             },
             '&' => {
@@ -245,15 +245,15 @@ pub const Lexer = struct {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .DoubleAmpersandEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .DoubleAmpersandEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .DoubleAmpersand, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .DoubleAmpersand, .start = self.index - 2, .end = self.index };
                     }
                 } else if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .AmpersandEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .AmpersandEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Ampersand, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Ampersand, .start = self.index - 1, .end = self.index };
                 }
             },
             '|' => {
@@ -261,66 +261,66 @@ pub const Lexer = struct {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .DoublePipeEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .DoublePipeEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .DoublePipe, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .DoublePipe, .start = self.index - 2, .end = self.index };
                     }
                 } else if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .PipeEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .PipeEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Pipe, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Pipe, .start = self.index - 1, .end = self.index };
                 }
             },
             '^' => {
                 if (self.peek() == '=') {
                     _ = self.nextChar();
-                    token = Token{ .type = .CaretEquals, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .CaretEquals, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .Caret, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Caret, .start = self.index - 1, .end = self.index };
                 }
             },
             '~' => {
-                token = Token{ .type = .Tilde, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .Tilde, .start = self.index - 1, .end = self.index };
             },
             '(' => {
-                token = Token{ .type = .ParenOpen, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .ParenOpen, .start = self.index - 1, .end = self.index };
             },
             ')' => {
-                token = Token{ .type = .ParenClose, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .ParenClose, .start = self.index - 1, .end = self.index };
             },
             '{' => {
-                token = Token{ .type = .CurlyOpen, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .CurlyOpen, .start = self.index - 1, .end = self.index };
             },
             '}' => {
-                token = Token{ .type = .CurlyClose, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .CurlyClose, .start = self.index - 1, .end = self.index };
             },
             '[' => {
-                token = Token{ .type = .BracketOpen, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .BracketOpen, .start = self.index - 1, .end = self.index };
             },
             ']' => {
-                token = Token{ .type = .BracketClose, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .BracketClose, .start = self.index - 1, .end = self.index };
             },
             ';' => {
-                token = Token{ .type = .Semicolon, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .Semicolon, .start = self.index - 1, .end = self.index };
             },
             ':' => {
-                token = Token{ .type = .Colon, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .Colon, .start = self.index - 1, .end = self.index };
             },
             ',' => {
-                token = Token{ .type = .Comma, .start = self.index - 1, .end = self.index };
+                token = Token{ .kind = .Comma, .start = self.index - 1, .end = self.index };
             },
             '.' => {
                 if (self.index + 1 < self.file_contents.len) {
                     if (self.peek() == '.' and self.secondNextChar() == '.') {
                         _ = self.nextChar(); // consume second dot
                         _ = self.nextChar(); // consume third dot
-                        token = Token{ .type = .TripleDot, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .TripleDot, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .Period, .start = self.index - 1, .end = self.index };
+                        token = Token{ .kind = .Period, .start = self.index - 1, .end = self.index };
                     }
                 } else {
-                    token = Token{ .type = .Period, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .Period, .start = self.index - 1, .end = self.index };
                 }
             },
             '?' => {
@@ -328,21 +328,21 @@ pub const Lexer = struct {
                     _ = self.nextChar();
                     if (self.peek() == '=') {
                         _ = self.nextChar();
-                        token = Token{ .type = .DoubleQuestionMarkEquals, .start = self.index - 3, .end = self.index };
+                        token = Token{ .kind = .DoubleQuestionMarkEquals, .start = self.index - 3, .end = self.index };
                     } else {
-                        token = Token{ .type = .DoubleQuestionMark, .start = self.index - 2, .end = self.index };
+                        token = Token{ .kind = .DoubleQuestionMark, .start = self.index - 2, .end = self.index };
                     }
                 } else if (self.peek() == '.') {
                     _ = self.nextChar();
-                    token = Token{ .type = .QuestionMarkPeriod, .start = self.index - 2, .end = self.index };
+                    token = Token{ .kind = .QuestionMarkPeriod, .start = self.index - 2, .end = self.index };
                 } else {
-                    token = Token{ .type = .QuestionMark, .start = self.index - 1, .end = self.index };
+                    token = Token{ .kind = .QuestionMark, .start = self.index - 1, .end = self.index };
                 }
             },
             '#' => {
                 if (isIdentifierStart(self.peek())) {
                     token = Token{
-                        .type = TokenType.Private,
+                        .kind = TokenType.Private,
                         .start = self.index - 1,
                         .end = self.index,
                     };
@@ -399,7 +399,7 @@ pub const Lexer = struct {
         const token_type = keyword_map.get(identifier) orelse .Identifier;
 
         return Token{
-            .type = token_type,
+            .kind = token_type,
             .start = start,
             .end = self.index,
             .value = identifier,
@@ -415,7 +415,7 @@ pub const Lexer = struct {
             if (c == quote_char) {
                 // End of string
                 return Token{
-                    .type = string_type,
+                    .kind = string_type,
                     .start = start,
                     .end = self.index,
                     .value = self.file_contents[start..self.index],

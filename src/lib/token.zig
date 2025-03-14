@@ -10,13 +10,13 @@ const zero_width_no_break_space = 0xFEFF;
 const zero_width_joiner = 0x200D;
 
 pub const Token = struct {
-    type: TokenType,
+    kind: TokenType,
     start: usize,
     end: usize,
     value: ?[]const u8 = null,
 
     pub fn parseDoubleValue(self: *const Token) !f64 {
-        std.debug.assert(self.type == .NumericLiteral);
+        std.debug.assert(self.kind == .NumericLiteral);
         const value = self.value.?;
 
         // Handle empty string
@@ -166,13 +166,13 @@ pub const Token = struct {
     }
 
     pub fn parseBoolValue(self: *const Token) !bool {
-        std.debug.assert(self.type == .BoolLiteral);
+        std.debug.assert(self.kind == .BoolLiteral);
 
         return (std.mem.eql(u8, self.value.?, "true"));
     }
 
     pub fn parseBigIntValue(self: *const Token) !u128 {
-        std.debug.assert(self.type == .BigIntLiteral);
+        std.debug.assert(self.kind == .BigIntLiteral);
 
         var result: u128 = 0;
         var i: usize = 0;
@@ -195,8 +195,8 @@ pub const Token = struct {
     }
 
     pub fn parseStringValue(self: *const Token, allocator: std.mem.Allocator) ![]u8 {
-        std.debug.assert(self.type == .StringLiteral or self.type == .TemplateLiteralString);
-        const isTemplate: bool = self.type == .TemplateLiteralString;
+        std.debug.assert(self.kind == .StringLiteral or self.kind == .TemplateLiteralString);
+        const isTemplate: bool = self.kind == .TemplateLiteralString;
 
         return escapes.parseEscapes(self.value.?, allocator, isTemplate);
     }

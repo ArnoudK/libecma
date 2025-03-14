@@ -21,7 +21,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
             '`' => {
                 if (areWeInTemplateString) {
                     const end = start + i + 1;
-                    const token = Token{ .type = TokenType.TemplateLiteralEnd, .start = end - 1, .end = end, .value = null };
+                    const token = Token{ .kind = TokenType.TemplateLiteralEnd, .start = end - 1, .end = end, .value = null };
                     try lexer.tokens.append(token);
                     lexer.index = end;
                     areWeInTemplateString = false;
@@ -29,7 +29,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
                 } else {
                     const end = start + i;
                     const value = lexer.file_contents[start..end];
-                    const token = Token{ .type = TokenType.TemplateLiteralString, .start = start, .end = end, .value = value };
+                    const token = Token{ .kind = TokenType.TemplateLiteralString, .start = start, .end = end, .value = value };
                     try lexer.tokens.append(token);
                     lexer.index = end + 1;
                     return true;
@@ -41,17 +41,17 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
                     const end = start + i;
 
                     if (!isTemplateString) {
-                        const token = Token{ .type = TokenType.TemplateLiteralStart, .start = start - 1, .end = start, .value = null };
+                        const token = Token{ .kind = TokenType.TemplateLiteralStart, .start = start - 1, .end = start, .value = null };
                         try lexer.tokens.append(token);
                     }
                     if (end > start + 1 and !areWeInTemplateString) {
                         const literal_value = lexer.file_contents[start..end];
-                        const literal_token = Token{ .type = TokenType.TemplateLiteralString, .start = start, .end = end, .value = literal_value };
+                        const literal_token = Token{ .kind = TokenType.TemplateLiteralString, .start = start, .end = end, .value = literal_value };
                         try lexer.tokens.append(literal_token);
                     }
 
                     // Add the interpolation start token for ${
-                    const expr_start_token = Token{ .type = TokenType.TemplateLiteralExprStart, .start = end, .end = end + 2, .value = null };
+                    const expr_start_token = Token{ .kind = TokenType.TemplateLiteralExprStart, .start = end, .end = end + 2, .value = null };
                     try lexer.tokens.append(expr_start_token);
 
                     // Move past ${
@@ -70,7 +70,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
                             brace_count -= 1;
                         } else if (lexer.file_contents[expr_end] == '`') {
                             // Unterminated expression in template
-                            const error_token = Token{ .type = TokenType.UnterminatedTemplateLiteral, .start = start, .end = expr_end, .value = lexer.file_contents[start..expr_end] };
+                            const error_token = Token{ .kind = TokenType.UnterminatedTemplateLiteral, .start = start, .end = expr_end, .value = lexer.file_contents[start..expr_end] };
                             try lexer.tokens.append(error_token);
                             lexer.index = expr_end;
                             return false;
@@ -80,7 +80,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
 
                     if (brace_count > 0) {
                         // Unterminated expression
-                        const error_token = Token{ .type = TokenType.UnterminatedTemplateLiteral, .start = start, .end = lexer.file_contents.len, .value = lexer.file_contents[start..lexer.file_contents.len] };
+                        const error_token = Token{ .kind = TokenType.UnterminatedTemplateLiteral, .start = start, .end = lexer.file_contents.len, .value = lexer.file_contents[start..lexer.file_contents.len] };
                         try lexer.tokens.append(error_token);
                         lexer.index = lexer.file_contents.len;
                         return false;
@@ -95,7 +95,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
 
                     // Add tokens from the temp lexer with adjusted positions
                     for (temp_lexer.tokens.items) |token| {
-                        if (token.type == TokenType.Eof) continue;
+                        if (token.kind == TokenType.Eof) continue;
 
                         var adjusted_token = token;
                         adjusted_token.start += expr_start;
@@ -105,7 +105,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
                     }
 
                     // Add the closing expression token
-                    const expr_end_token = Token{ .type = TokenType.TemplateLiteralExprEnd, .start = expr_end, .end = expr_end + 1, .value = null };
+                    const expr_end_token = Token{ .kind = TokenType.TemplateLiteralExprEnd, .start = expr_end, .end = expr_end + 1, .value = null };
                     try lexer.tokens.append(expr_end_token);
 
                     // Update position and continue parsing the rest of the template
@@ -130,7 +130,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
                     i += 1; // Skip the escaped character
                 } else {
                     const value = lexer.file_contents[start..lexer.file_contents.len];
-                    const token = Token{ .type = TokenType.UnterminatedTemplateLiteral, .start = start, .end = lexer.file_contents.len, .value = value };
+                    const token = Token{ .kind = TokenType.UnterminatedTemplateLiteral, .start = start, .end = lexer.file_contents.len, .value = value };
                     try lexer.tokens.append(token);
                     lexer.index = lexer.file_contents.len;
                     return false;
@@ -142,7 +142,7 @@ pub fn parseTemplateString(lexer: *Lexer) !bool {
     }
 
     const value = lexer.file_contents[start..lexer.file_contents.len];
-    const token = Token{ .type = TokenType.UnterminatedTemplateLiteral, .start = start, .end = lexer.file_contents.len, .value = value };
+    const token = Token{ .kind = TokenType.UnterminatedTemplateLiteral, .start = start, .end = lexer.file_contents.len, .value = value };
     try lexer.tokens.append(token);
     lexer.index = lexer.file_contents.len;
     return false;

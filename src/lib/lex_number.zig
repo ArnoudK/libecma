@@ -110,7 +110,7 @@ pub fn lexNumber(self: *Lexer, first_char: u8) LexerError!Token {
     if (self.index < self.file_contents.len and self.peek() == 'n') {
         _ = self.nextChar();
         return Token{
-            .type = .BigIntLiteral,
+            .kind = .BigIntLiteral,
             .start = start,
             .end = self.index,
             .value = self.file_contents[start..self.index],
@@ -118,7 +118,7 @@ pub fn lexNumber(self: *Lexer, first_char: u8) LexerError!Token {
     }
 
     return Token{
-        .type = .NumericLiteral,
+        .kind = .NumericLiteral,
         .start = start,
         .end = self.index,
         .value = self.file_contents[start..self.index],

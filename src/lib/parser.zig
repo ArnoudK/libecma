@@ -76,7 +76,7 @@ pub const Parser = struct {
     fn parseStatement(self: *Parser) ParserError!ast.Statement {
         const current = self.peek();
 
-        return switch (current.type) {
+        return switch (current.kind) {
             .Let, .Const, .Var => try self.parseVariableDeclaration(),
             .Function => try self.parseFunctionDeclaration(),
             .If => try self.parseIfStatement(),
@@ -98,7 +98,7 @@ pub const Parser = struct {
     fn parseVariableDeclaration(self: *Parser) ParserError!ast.Statement {
         // Determine variable kind (var, let, or const)
         const token = self.advance();
-        const kind = switch (token.type) {
+        const kind = switch (token.kind) {
             .Var => ast.VariableKind.Var,
             .Let => ast.VariableKind.Let,
             .Const => ast.VariableKind.Const,
@@ -136,7 +136,6 @@ pub const Parser = struct {
 
         // Parse the function name
         const name_token = try self.consume(.Identifier);
-        const name = name_token.value.?;
 
         // Parse parameter list
         _ = try self.consume(.ParenOpen);
@@ -146,8 +145,8 @@ pub const Parser = struct {
         if (!self.check(.ParenClose)) {
             while (true) {
                 const param_token = try self.consume(.Identifier);
-                try params.append(param_token.value.?);
-
+                const paramName = param_token.value.?;
+                try params.append(paramName);
                 if (!self.match(.Comma)) {
                     break;
                 }
@@ -161,7 +160,7 @@ pub const Parser = struct {
 
         return ast.Statement{
             .FunctionDeclaration = .{
-                .name = name,
+                .name = name_token.value.?,
                 .params = try params.toOwnedSlice(),
                 .body = body.Block,
             },
@@ -332,7 +331,7 @@ pub const Parser = struct {
     fn parsePrefix(self: *Parser) ParserError!ast.Expression {
         const token = self.peek();
 
-        return switch (token.type) {
+        return switch (token.kind) {
             .NumericLiteral => self.parseNumberLiteral(),
             .StringLiteral, .TemplateLiteralString => self.parseStringLiteral(),
             .BracketOpen => self.parseArrayLiteral(),
@@ -421,7 +420,7 @@ pub const Parser = struct {
     fn parseInfix(self: *Parser, left: ast.Expression) ParserError!ast.Expression {
         const token = self.peek();
 
-        return switch (token.type) {
+        return switch (token.kind) {
             .Plus, .Minus, .Asterisk, .Slash, .Percent, .DoubleAsterisk, .EqualsEquals, .ExclamationMarkEquals, .EqualsEqualsEquals, .ExclamationMarkEqualsEquals, .LessThan, .LessThanEquals, .GreaterThan, .GreaterThanEquals, .DoubleAmpersand, .DoublePipe, .Ampersand, .Pipe, .Caret, .ShiftLeft, .ShiftRight, .UnsignedShiftRight, .In, .Instanceof => try self.parseBinary(left),
 
             .Equals => try self.parseAssignment(left),
@@ -488,7 +487,7 @@ pub const Parser = struct {
 
     fn parseBinary(self: *Parser, left: ast.Expression) ParserError!ast.Expression {
         const operator = self.advance();
-        const precedence = getTokenPrecedence(operator.type);
+        const precedence = getTokenPrecedence(operator.kind);
 
         // Parse right side with precedence one level higher to ensure left-associativity
         const right = try self.parsePrecedence(@as(Precedence, @enumFromInt(@intFromEnum(precedence) + 1)));
@@ -510,18 +509,17 @@ pub const Parser = struct {
         _ = self.advance(); // Consume '='
         const value = try self.parsePrecedence(.Assignment);
 
-        const value_ptr = try self.allocator.create(ast.Expression);
-        value_ptr.* = value;
-
+        // Check if target is valid before allocating memory
         if (left == .Identifier) {
+            const value_ptr = try self.allocator.create(ast.Expression);
+            value_ptr.* = value;
+
             return ast.Expression{ .Assignment = .{
                 .name = left.Identifier,
                 .value = value_ptr,
             } };
         }
 
-        // Clean up allocated expression on error
-        self.allocator.destroy(value_ptr);
         return ParserError.InvalidAssignmentTarget;
     }
 
@@ -613,7 +611,7 @@ pub const Parser = struct {
 
     fn getNextPrecedence(self: *Parser) Precedence {
         if (self.isAtEnd()) return .None;
-        return getTokenPrecedence(self.peek().type);
+        return getTokenPrecedence(self.peek().kind);
     }
 
     fn match(self: *Parser, token_type: TokenType) bool {
@@ -626,7 +624,7 @@ pub const Parser = struct {
 
     fn check(self: *Parser, token_type: TokenType) bool {
         if (self.isAtEnd()) return false;
-        return self.peek().type == token_type;
+        return self.peek().kind == token_type;
     }
 
     fn advance(self: *Parser) Token {
@@ -648,7 +646,7 @@ pub const Parser = struct {
     }
 
     fn isAtEnd(self: *Parser) bool {
-        return self.peek().type == .Eof or self.index >= self.tokens.len;
+        return self.peek().kind == .Eof or self.index >= self.tokens.len;
     }
 };
 

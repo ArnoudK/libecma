@@ -36,9 +36,13 @@ pub const Program = struct {
                 }
             },
             .FunctionDeclaration => |*func_decl| {
-                for (func_decl.params) |param| {
-                    self.allocator.free(param);
-                }
+                // self.allocator.free(func_decl.name);
+
+                // for (func_decl.params) |param| {
+                //     std.debug.print("TRYING TO FREE: {s}\n", .{param});
+                //     self.allocator.free(param);
+                // }
+
                 self.allocator.free(func_decl.params);
 
                 for (func_decl.body.statements) |*body_stmt| {
@@ -93,10 +97,11 @@ pub const Program = struct {
         }
     }
 
-    fn freeExpression(self: *Program, expr: *Expression) void {
+    pub fn freeExpression(self: *Program, expr: *Expression) void {
         switch (expr.*) {
             .Assignment => |*assignment| {
                 self.freeExpression(assignment.value);
+                self.allocator.destroy(assignment.value);
             },
             .Binary => |*binary| {
                 self.freeExpression(binary.left);

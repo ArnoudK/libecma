@@ -5,7 +5,9 @@ const lib = @import("root.zig");
 
 pub fn main() !void {
     // get args
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .stack_trace_frames = 32,
+    }){};
     {
         var gpa_allocator = gpa.allocator();
 

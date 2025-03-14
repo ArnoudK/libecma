@@ -1,6 +1,10 @@
 const std = @import("std");
 const Interpreter = @import("interpreter.zig").Interpreter;
 const Value = @import("interpreter.zig").Value;
+const InterpreterError = @import("interp_errors.zig").InterpreterError;
+
+const initObject = @import("stdlib_object.zig").initObject;
+
 const initJSON = @import("stdlib_json.zig").initJSON;
 const stdout = std.io.getStdOut().writer();
 
@@ -14,7 +18,7 @@ pub fn initStdLib(interp: *Interpreter) !void {
 pub var rnd: std.Random = undefined;
 
 /// Initialize the console object and its methods
-fn initConsole(interp: *Interpreter) !void {
+fn initConsole(interp: *Interpreter) InterpreterError!void {
     // Create console object
     const console = try interp.createObject();
 
@@ -29,7 +33,7 @@ fn initConsole(interp: *Interpreter) !void {
 }
 
 /// Implementation of console.log
-fn consoleLog(interp: *Interpreter, args: []Value) !Value {
+fn consoleLog(interp: *Interpreter, args: []Value) InterpreterError!Value {
     _ = interp;
     for (args, 0..) |arg, i| {
         if (i > 0) {
@@ -37,12 +41,12 @@ fn consoleLog(interp: *Interpreter, args: []Value) !Value {
         }
         try printValue(arg);
     }
-    try stdout.print("\n", .{});
+    try stdout.writeByte('\n');
     return Value{ .Undefined = {} };
 }
 
 /// Helper function to print a Value
-fn printValue(value: Value) !void {
+fn printValue(value: Value) InterpreterError!void {
     switch (value) {
         .Number => |n| try stdout.print("{d}", .{n}),
         .String => |s| try stdout.print("{s}", .{s}),
@@ -65,7 +69,7 @@ fn printValue(value: Value) !void {
     }
 }
 
-pub fn initMath(interp: *Interpreter) !void {
+pub fn initMath(interp: *Interpreter) InterpreterError!void {
     const math = try interp.createObject();
 
     const random_func = try interp.createNativeFunction("random", mathRandom);
@@ -75,7 +79,7 @@ pub fn initMath(interp: *Interpreter) !void {
     try interp.envDefine(interp.global_env, "Math", math);
 }
 
-fn mathRandom(interp: *Interpreter, args: []Value) !Value {
+fn mathRandom(interp: *Interpreter, args: []Value) InterpreterError!Value {
     _ = interp;
     _ = args;
     return Value{ .Number = rnd.float(f64) };

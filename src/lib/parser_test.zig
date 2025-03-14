@@ -23,7 +23,7 @@ fn testParse(source: []const u8) !ast.Program {
     while (true) {
         const token = try lexer.nextToken();
         try tokens.append(token);
-        if (token.type == .Eof) break;
+        if (token.kind == .Eof) break;
     }
 
     // Parse the tokens

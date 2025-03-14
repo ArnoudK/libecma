@@ -51,6 +51,7 @@ pub fn build(b: *std.Build) void {
         .linkage = .static,
         .name = "libecma",
         .root_module = lib_mod,
+        .use_llvm = false,
     });
 
     // This declares intent for the library to be installed into the standard
@@ -63,6 +64,7 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "libecma",
         .root_module = exe_mod,
+        .use_llvm = false,
     });
 
     // This declares intent for the executable to be installed into the

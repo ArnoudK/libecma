@@ -2,8 +2,9 @@ const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 const Value = @import("interpreter.zig").Value;
 const Interpreter = @import("interpreter.zig").Interpreter;
+const InterpreterError = @import("interp_errors.zig").InterpreterError;
 
-pub fn initJSON(interp: *Interpreter) !void {
+pub fn initJSON(interp: *Interpreter) InterpreterError!void {
     const json = try interp.createObject();
 
     const stringify = try interp.createNativeFunction("stringify", jsonStringify);
@@ -12,7 +13,7 @@ pub fn initJSON(interp: *Interpreter) !void {
     try interp.envDefine(interp.global_env, "JSON", json);
 }
 
-pub fn jsonStringify(interp: *Interpreter, args: []Value) !Value {
+pub fn jsonStringify(interp: *Interpreter, args: []Value) InterpreterError!Value {
     if (args.len < 1) {
         return interp.createString("undefined");
     }
@@ -33,25 +34,36 @@ pub fn jsonStringify(interp: *Interpreter, args: []Value) !Value {
     _ = replacer;
     if (args.len > 2) {
         const arg2 = args[2];
-        if (arg2 == .String) {
-            space = arg2.String;
+        switch (arg2) {
+            .String => |s| space = s,
+            .Number => |n| {
+                if (n < 0) {
+                    space = null;
+                } else if (n > 10) {
+                    space = "          ";
+                } else {
+                    const spaces = [_]u8{ ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+                    const space_len: u8 = @truncate(@as(u64, @intCast(@as(i64, (@intFromFloat(n))))));
+                    space = spaces[0..space_len];
+                }
+            },
+            else => return error.InvalidArgument,
         }
     }
-
     try valueToJson(writer, args[0], space, 0); // directly into the writer
 
     const jsonString = try interp.createString(builder.items);
     return jsonString;
 }
 
-fn writeIndent(writer: std.ArrayList(u8).Writer, indent: []const u8, level: usize) !void {
+fn writeIndent(writer: std.ArrayList(u8).Writer, indent: []const u8, level: usize) InterpreterError!void {
     var i: usize = 0;
     while (i < level) : (i += 1) {
         try writer.writeAll(indent);
     }
 }
 
-pub fn valueToJson(writer: std.ArrayList(u8).Writer, value: Value, indent: ?[]const u8, level: usize) !void {
+pub fn valueToJson(writer: std.ArrayList(u8).Writer, value: Value, indent: ?[]const u8, level: usize) InterpreterError!void {
     // Helper function to write indentation
 
     switch (value) {
